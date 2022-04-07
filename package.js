@@ -1,6 +1,6 @@
 Package.describe({
   name: 'jorgenvatle:accounts-discord',
-  version: '1.0.0',
+  version: '1.0.1',
   // Brief, one-line summary of the package.
   summary: 'Adds account support for Discord',
   // URL to the Git repository containing the source code for this package.
@@ -12,7 +12,7 @@ Package.describe({
 
 Package.onUse(function (api) {
   api.use('ecmascript@0.12.4');
-  api.use('accounts-base@1.4.3', ['client', 'server']);
+  api.use('accounts-base@2.0.0', ['client', 'server']);
   // Export Accounts (etc) to packages using this one.
   api.imply('accounts-base', ['client', 'server']);
 
