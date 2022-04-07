@@ -1,6 +1,6 @@
 Package.describe({
   name: 'jorgenvatle:accounts-discord',
-  version: '0.2.0',
+  version: '1.0.0',
   // Brief, one-line summary of the package.
   summary: 'Adds account support for Discord',
   // URL to the Git repository containing the source code for this package.
@@ -17,11 +17,11 @@ Package.onUse(function (api) {
   api.imply('accounts-base', ['client', 'server']);
 
   api.use('accounts-oauth@1.1.16', ['client', 'server']);
-  api.use('lichthagel:discord-oauth@0.1.0');
-  api.imply('lichthagel:discord-oauth');
+  api.use('jorgenvatle:discord-oauth@1.0.0');
+  api.imply('jorgenvatle:discord-oauth');
 
   api.use(
-    ['accounts-ui@1.3.1', 'lichthagel:discord-config-ui@0.1.0'],
+    ['accounts-ui@1.3.1', 'jorgenvatle:discord-config-ui@0.1.0'],
     ['client', 'server'],
     { weak: true }
   );
