@@ -1,8 +1,8 @@
-# Meteor OAuth connector for Discord
+# accounts-discord
 
 ## Installation
 
-
+`meteor add storyteller:accounts-discord`
 
 ## Documentation
 

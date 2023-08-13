@@ -1,4 +1,7 @@
 import Discord from './namespace.js';
+import { Random } from 'meteor/random';
+import { ServiceConfiguration } from 'meteor/service-configuration';
+import { OAuth } from 'meteor/oauth';
 
 Discord.requestCredential = (options, credentialRequestCompleteCallback) => {
     if (!credentialRequestCompleteCallback && typeof options === 'function') {
@@ -16,7 +19,7 @@ Discord.requestCredential = (options, credentialRequestCompleteCallback) => {
 
     const credentialToken = Random.secret();
 
-    const scope = (options && options.requestPermissions) || ['identify', 'email'];
+    const scope = (options?.requestPermissions) || ['identify', 'email'];
     const flatScope = scope.map(encodeURIComponent).join('+');
 
     const loginStyle = OAuth._loginStyle('discord', config, options);
@@ -27,7 +30,7 @@ Discord.requestCredential = (options, credentialRequestCompleteCallback) => {
         '&response_type=code' +
         '&scope=' + flatScope +
         '&redirect_uri=' + OAuth._redirectUri('discord', config) +
-        '&state=' + OAuth._stateParam(loginStyle, credentialToken, options && options.redirectUrl);
+        '&state=' + OAuth._stateParam(loginStyle, credentialToken, options?.redirectUrl);
 
     OAuth.launchLogin({
         loginService: 'discord',
@@ -35,6 +38,6 @@ Discord.requestCredential = (options, credentialRequestCompleteCallback) => {
         loginUrl,
         credentialRequestCompleteCallback,
         credentialToken,
-        popupOptions: {width: 450, height: 750}
+        popupOptions: {width: 500, height: 750}
     });
 };

@@ -1,19 +1,71 @@
 import Discord from './namespace.js';
-import { Accounts } from 'meteor/accounts-base';
+import { Meteor } from 'meteor/meteor';
+import { OAuth } from 'meteor/oauth';
+import { ServiceConfiguration } from 'meteor/service-configuration';
+import { URLSearchParams } from 'meteor/url';
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
-Discord.whitelistedFields = ['id', 'username', 'discriminator', 'avatar', 'bot', 'mfa_enabled', 'locale', 'verified', 'email', 'flags', 'premium_type'];
+// Discord.knownScopes = [
+//     'activities.read',
+//     'activities.write',
+//     'applications.builds.read',
+//     'applications.builds.upload',
+//     'applications.commands',
+//     'applications.commands.update',
+//     'applications.commands.permissions.update',
+//     'applications.entitlements',
+//     'applications.store.update',
+//     'bot',
+//     'connections',
+//     'dm_channels.read',
+//     'email',
+//     'gdm.join',
+//     'guilds',
+//     'guilds.join',
+//     'guilds.members.read',
+//     'identify',
+//     'messages.read',
+//     'relationships.read',
+//     'role_connections.write',
+//     'rpc',
+//     'rpc.activities.write',
+//     'rpc',
+//     'rpc.notifications.read',
+//     'rpc.voice.read',
+//     'rpc.voice.write',
+//     'voice',
+//     'webhook.incoming'
+// ];
 
-OAuth.registerService('discord', 2, null, query => {
-    const tokens = getTokens(query);
-    const identity = getIdentity(tokens.access_token);
+Discord.whitelistedFields = [
+    'id',
+    'username',
+    'discriminator',
+    'global_name',
+    'avatar',
+    'bot',
+    'system',
+    'mfa_enabled',
+    'banner',
+    'accent_color',
+    'locale',
+    'verified',
+    'email',
+    'flags',
+    'premium_type',
+    'public_flags',
+    'avatar_decoration',
+];
+
+OAuth.registerService('discord', 2, null, async (query) => {
+    const tokens = await getTokens(query);
+    const identity = await getIdentity(tokens.access_token);
     const scope = tokens.scope;
 
-    var serviceData = {
+    const serviceData = {
         id: identity.id,
         username: identity.username,
-        discriminator: identity.discriminator,
         accessToken: OAuth.sealSecret(tokens.access_token),
         tokenType: tokens.token_type,
         scope: scope
@@ -35,7 +87,7 @@ OAuth.registerService('discord', 2, null, query => {
         serviceData,
         options: {
             profile: {
-                name: identity.username + "#" + identity.discriminator
+                name: identity.username
             }
         }
     }
@@ -45,56 +97,68 @@ let userAgent = "Meteor";
 if (Meteor.release)
     userAgent += '/${Meteor.release}';
 
-const getTokens = query => {
-    const config = ServiceConfiguration.configurations.findOne({service: 'discord'});
+const getTokens = async (query) => {
+    const config = await ServiceConfiguration.configurations.findOneAsync({service: 'discord'});
     if (!config)
         throw new ServiceConfiguration.ConfigError();
 
-    let response;
+    let request;
+
     try {
-        response = HTTP.post(
-            "https://discord.com/api/oauth2/token", {
-                headers: {
-                    Accept: 'application/json',
-                    "User-Agent": userAgent
-                },
-                params: {
-                    grant_type: 'authorization_code',
-                    code: query.code,
-                    client_id: config.clientId,
-                    client_secret: OAuth.openSecret(config.secret),
-                    redirect_uri: OAuth._redirectUri('discord', config),
-                    state: query.state
-                }
-            });
+        const content = new URLSearchParams({
+            grant_type: 'authorization_code',
+            code: query.code,
+            client_id: config.clientId,
+            client_secret: OAuth.openSecret(config.secret),
+            redirect_uri: OAuth._redirectUri('discord', config),
+            state: query.state
+        })
+
+        request = await fetch("https://discord.com/api/oauth2/token", {
+            method: "POST",
+            headers: {
+                Accept: 'application/json',
+                "User-Agent": userAgent,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: content,
+            redirect: 'follow',
+            jar: false
+        })
     } catch (err) {
         throw Object.assign(
             new Error(`Failed to complete OAuth handshake with Discord. ${err.message}`),
             {response: err.response},
         );
     }
-    if (response.data.error) { // if the http response was a json object with an error attribute
-        throw new Error(`Failed to complete OAuth handshake with Discord. ${response.data.error}`);
+
+    const response = await request.json();
+
+    if (response.error) { // if the http response was a json object with an error attribute
+        throw new Error(`Failed to complete OAuth handshake with Discord. ${response.error}`);
     } else {
-        return response.data;
+        return response;
     }
 };
 
-const getIdentity = accessToken => {
+const getIdentity = async (accessToken) => {
+    let response
+
     try {
-        return HTTP.get(
-            "https://discord.com/api/users/@me", {
-                headers: {
-                    "User-Agent": userAgent,
-                    "Authorization": "Bearer " + accessToken
-                },
-            }).data;
+        response = await fetch("https://discord.com/api/users/@me", {
+            method: 'GET',
+            headers: {
+                "User-Agent": userAgent,
+                "Authorization": "Bearer " + accessToken
+            }
+        })
     } catch (err) {
         throw Object.assign(
             new Error('Failed to fetch identity from Discord. ${err.message}'),
             {response: err.response},
         );
     }
+    return await response.json()
 };
 
 Discord.retrieveCredential = (credentialToken, credentialSecret) => OAuth.retrieveCredential(credentialToken, credentialSecret);

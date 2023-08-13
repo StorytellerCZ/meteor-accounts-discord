@@ -1,3 +1,6 @@
+import { Accounts } from 'meteor/accounts-base';
+import { Meteor } from 'meteor/meteor';
+
 Accounts.oauth.registerService('discord');
 
 if (Meteor.isClient) {
