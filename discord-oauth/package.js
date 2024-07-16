@@ -2,12 +2,12 @@
 Package.describe({
     name: 'storyteller:discord-oauth',
     summary: 'Discord OAuth flow',
-    version: '1.0.1-beta.0',
+    version: '1.0.1',
     git: 'https://github.com/StorytellerCZ/meteor-accounts-discord/'
 });
 
 Package.onUse(api => {
-    api.versionsFrom(['2.9.0', '3.0-beta.0']);
+    api.versionsFrom(['2.9.0', '3.0']);
     api.use('ecmascript', ['client', 'server']);
     api.use('oauth2', ['client', 'server']);
     api.use('oauth', ['client', 'server']);
